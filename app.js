@@ -1,4 +1,5 @@
 const express = require("express");
+const http = require("http");
 const https = require("https");
 const socketIo = require("socket.io");
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
@@ -28,7 +29,8 @@ const getSslOptions = () => {
 
 //Setting up express and adding socketIo middleware
 const app = express();
-const server = https.createServer(getSslOptions(),app);
+//const server = https.createServer(getSslOptions(),app);
+const server = http.createServer(app);
 const io = socketIo(server);
 
 let activeDoors = []
@@ -58,30 +60,39 @@ io.on("connection", socket => {
        socket.broadcast.emit("outgoing data", {num: data});
     });
 
-	const socketEmitter = setInterval(() => { toggleRandomDoor(socket)}, pingClientEvery * 1000)
+	//const socketEmitter = setInterval(() => { toggleRandomDoor(socket)}, pingClientEvery * 1000)
 
     //A special namespace "disconnect" for when a client disconnects
 	socket.on("disconnect", () => {
-		clearInterval(socketEmitter)
-		activeDoors = []
+		//clearInterval(socketEmitter)
+		//activeDoors = []
 		console.log("Client disconnected")
 	})
 })
 
 app.post('/sms', (req, res) => {
-    const twiml = new MessagingResponse();
+	io.sockets.emit('open door', 12)
+	res.writeHead(200, {'Content-Type': 'text/html'});
+    res.end('Hello');
+    //const twiml = new MessagingResponse();
 
-    twiml.message('The Robots are coming! Head for the hills!');
+    //twiml.message('The Robots are coming! Head for the hills!');
 
-    res.writeHead(200, {'Content-Type': 'text/xml'});
-    res.end(twiml.toString());
+    //res.writeHead(200, {'Content-Type': 'text/xml'});
+    //res.end(twiml.toString());
 });
 
 app.get('/', (req, res) => {
     res.send('<h1>Red Panda UK - Fire-Tec server running</h1>');
 });
 
+/*
 https.createServer(getSslOptions(),app).listen(httpport, () => {
+    console.log(`Express server listening on port ${httpport}`);
+});
+*/
+
+http.createServer(app).listen(httpport, () => {
     console.log(`Express server listening on port ${httpport}`);
 });
 
